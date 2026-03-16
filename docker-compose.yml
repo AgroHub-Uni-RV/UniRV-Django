@@ -65,7 +65,6 @@ services:
       - static_data:/app/staticfiles
       - logs_data:/app/logs
     environment:
-      # ESSA É A LINHA QUE SALVA A PÁTRIA:
       DATABASE_URL: postgresql://${DB_USER:-agrohub_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-agrohub_production}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
@@ -107,7 +106,8 @@ services:
   # ============================================
   celery-worker:
     image: agrohub-web:latest
-    command:
+    # AQUI ESTÁ A MUDANÇA: Substituimos command por entrypoint
+    entrypoint:
       [
         "celery",
         "-A",
@@ -159,7 +159,8 @@ services:
   # ============================================
   celery-beat:
     image: agrohub-web:latest
-    command:
+    # AQUI ESTÁ A MUDANÇA: Substituimos command por entrypoint
+    entrypoint:
       [
         "celery",
         "-A",
@@ -197,7 +198,8 @@ services:
   # ============================================
   flower:
     image: agrohub-web:latest
-    command:
+    # AQUI ESTÁ A MUDANÇA: Substituimos command por entrypoint
+    entrypoint:
       [
         "celery",
         "-A",
