@@ -59,7 +59,8 @@ services:
       - db
       - redis
     ports:
-      - "8000:8000"
+      # AQUI ESTÁ A MUDANÇA: Desviando do Coolify na porta 8000
+      - "8888:8000"
     volumes:
       - media_data:/app/media
       - static_data:/app/staticfiles
@@ -106,7 +107,6 @@ services:
   # ============================================
   celery-worker:
     image: agrohub-web:latest
-    # AQUI ESTÁ A MUDANÇA: Substituimos command por entrypoint
     entrypoint:
       [
         "celery",
@@ -159,7 +159,6 @@ services:
   # ============================================
   celery-beat:
     image: agrohub-web:latest
-    # AQUI ESTÁ A MUDANÇA: Substituimos command por entrypoint
     entrypoint:
       [
         "celery",
@@ -198,7 +197,6 @@ services:
   # ============================================
   flower:
     image: agrohub-web:latest
-    # AQUI ESTÁ A MUDANÇA: Substituimos command por entrypoint
     entrypoint:
       [
         "celery",
