@@ -30,7 +30,11 @@ services:
       POSTGRES_USER: ${DB_USER:-agrohub_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-agrohub_user} -d ${DB_NAME:-agrohub_production}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-agrohub_user} -d ${DB_NAME:-agrohub_production}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,11 +56,10 @@ services:
       --maxmemory-policy allkeys-lru
       --tcp-keepalive 60
       --timeout 300
-      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "${REDIS_PASSWORD:+-a}", "${REDIS_PASSWORD:-}", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -144,7 +147,16 @@ services:
       dockerfile: Dockerfile
     container_name: agrohub_celery_worker
     restart: unless-stopped
-    command: ["celery", "-A", "UniRV_Django", "worker", "-l", "info", "--concurrency=2"]
+    command:
+      [
+        "celery",
+        "-A",
+        "UniRV_Django",
+        "worker",
+        "-l",
+        "info",
+        "--concurrency=2",
+      ]
     depends_on:
       db:
         condition: service_healthy
@@ -171,7 +183,11 @@ services:
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@agrohub.unirv.edu.br}
       DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL:-INFO}
     healthcheck:
-      test: ["CMD-SHELL", "celery -A UniRV_Django inspect ping --timeout 10 || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A UniRV_Django inspect ping --timeout 10 || exit 1",
+        ]
       interval: 30s
       timeout: 15s
       retries: 3
@@ -188,7 +204,17 @@ services:
       dockerfile: Dockerfile
     container_name: agrohub_celery_beat
     restart: unless-stopped
-    command: ["celery", "-A", "UniRV_Django", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    command:
+      [
+        "celery",
+        "-A",
+        "UniRV_Django",
+        "beat",
+        "-l",
+        "info",
+        "--scheduler",
+        "django_celery_beat.schedulers:DatabaseScheduler",
+      ]
     depends_on:
       db:
         condition: service_healthy
@@ -221,7 +247,15 @@ services:
       dockerfile: Dockerfile
     container_name: agrohub_flower
     restart: unless-stopped
-    command: ["celery", "-A", "UniRV_Django", "flower", "--port=5555", "--url_prefix=flower"]
+    command:
+      [
+        "celery",
+        "-A",
+        "UniRV_Django",
+        "flower",
+        "--port=5555",
+        "--url_prefix=flower",
+      ]
     depends_on:
       redis:
         condition: service_healthy
