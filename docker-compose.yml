@@ -1,18 +1,6 @@
 # ============================================
 # AgroHub - Docker Compose Configuration
 # ============================================
-# Production deployment with PostgreSQL, Redis, Nginx
-#
-# Usage:
-#   cp .env.docker.example .env
-#   # Edit .env with your production values
-#   docker-compose up --build -d
-#
-# Services:
-#   - db: PostgreSQL 16 database
-#   - redis: Redis 7 cache
-#   - web: Django application (Gunicorn)
-#   - nginx: Reverse proxy
 
 services:
   # ============================================
@@ -22,7 +10,6 @@ services:
     image: postgres:16-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Linha do init removida daqui!
     environment:
       POSTGRES_DB: ${DB_NAME:-agrohub_production}
       POSTGRES_USER: ${DB_USER:-agrohub_user}
@@ -71,13 +58,15 @@ services:
     depends_on:
       - db
       - redis
-    ports: # <--- ADICIONE ISSO
-      - "8000:8000" # <--- ADICIONE ISSO
+    ports:
+      - "8000:8000"
     volumes:
       - media_data:/app/media
       - static_data:/app/staticfiles
       - logs_data:/app/logs
     environment:
+      # ESSA É A LINHA QUE SALVA A PÁTRIA:
+      DATABASE_URL: postgresql://${DB_USER:-agrohub_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-agrohub_production}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:?ALLOWED_HOSTS is required}
@@ -135,6 +124,7 @@ services:
       - media_data:/app/media
       - logs_data:/app/logs
     environment:
+      DATABASE_URL: postgresql://${DB_USER:-agrohub_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-agrohub_production}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost}
@@ -184,6 +174,7 @@ services:
       - db
       - redis
     environment:
+      DATABASE_URL: postgresql://${DB_USER:-agrohub_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-agrohub_production}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost}
@@ -218,6 +209,7 @@ services:
     depends_on:
       - redis
     environment:
+      DATABASE_URL: postgresql://${DB_USER:-agrohub_user}:${DB_PASSWORD}@db:5432/${DB_NAME:-agrohub_production}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost}
@@ -234,10 +226,6 @@ services:
     networks:
       - agrohub_network
 
-  # ============================================
-  # Nginx Reverse Proxy
-  # ============================================
-
 # ============================================
 # Named Volumes
 # ============================================
@@ -252,8 +240,6 @@ volumes:
     name: agrohub_static_data
   logs_data:
     name: agrohub_logs_data
-  nginx_logs:
-    name: agrohub_nginx_logs
 
 # ============================================
 # Network
