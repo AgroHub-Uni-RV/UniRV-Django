@@ -20,7 +20,6 @@ services:
   # ============================================
   db:
     image: postgres:16-alpine
-    container_name: agrohub_db
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -47,7 +46,6 @@ services:
   # ============================================
   redis:
     image: redis:7-alpine
-    container_name: agrohub_redis
     restart: unless-stopped
     command: >-
       redis-server
@@ -71,10 +69,10 @@ services:
   # Django Application (Gunicorn)
   # ============================================
   web:
+    image: ${WEB_IMAGE:-agrohub_web:latest}
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: agrohub_web
     restart: unless-stopped
     depends_on:
       - db
@@ -125,8 +123,6 @@ services:
 
       # Static files
       WHITENOISE_MAX_AGE: ${WHITENOISE_MAX_AGE:-31536000}
-    expose:
-      - "8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
@@ -140,10 +136,10 @@ services:
   # Celery Worker
   # ============================================
   celery-worker:
+    image: ${WEB_IMAGE:-agrohub_web:latest}
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: agrohub_celery_worker
     restart: unless-stopped
     command:
       [
@@ -195,10 +191,10 @@ services:
   # Celery Beat (Periodic Task Scheduler)
   # ============================================
   celery-beat:
+    image: ${WEB_IMAGE:-agrohub_web:latest}
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: agrohub_celery_beat
     restart: unless-stopped
     command:
       [
@@ -236,10 +232,10 @@ services:
   # Flower — Celery Monitoring Dashboard
   # ============================================
   flower:
+    image: ${WEB_IMAGE:-agrohub_web:latest}
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: agrohub_flower
     restart: unless-stopped
     command:
       [
@@ -274,7 +270,6 @@ services:
   # ============================================
   nginx:
     image: nginx:alpine
-    container_name: agrohub_nginx
     restart: unless-stopped
     depends_on:
       - web
