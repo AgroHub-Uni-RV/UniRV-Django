@@ -77,10 +77,8 @@ services:
     container_name: agrohub_web
     restart: unless-stopped
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - db
+      - redis
     volumes:
       - media_data:/app/media
       - static_data:/app/staticfiles
@@ -158,10 +156,8 @@ services:
         "--concurrency=2",
       ]
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - db
+      - redis
     volumes:
       - media_data:/app/media
       - logs_data:/app/logs
@@ -216,10 +212,8 @@ services:
         "django_celery_beat.schedulers:DatabaseScheduler",
       ]
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - db
+      - redis
     environment:
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
@@ -257,8 +251,7 @@ services:
         "--url_prefix=flower",
       ]
     depends_on:
-      redis:
-        condition: service_healthy
+      - redis
     environment:
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
@@ -284,8 +277,7 @@ services:
     container_name: agrohub_nginx
     restart: unless-stopped
     depends_on:
-      web:
-        condition: service_healthy
+      - web
     ports:
       - "80:80"
       - "443:443"
