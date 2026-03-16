@@ -20,7 +20,6 @@ services:
   # ============================================
   db:
     image: postgres:16-alpine
-    restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
@@ -46,7 +45,6 @@ services:
   # ============================================
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
     command: >-
       redis-server
       --appendonly yes
@@ -69,11 +67,7 @@ services:
   # Django Application (Gunicorn)
   # ============================================
   web:
-    image: ${WEB_IMAGE:-agrohub-web:latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
+    image: agrohub-web:latest
     depends_on:
       - db
       - redis
@@ -82,28 +76,19 @@ services:
       - static_data:/app/staticfiles
       - logs_data:/app/logs
     environment:
-      # Django settings
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:?ALLOWED_HOSTS is required}
-
-      # Database (uses container hostname)
       DB_NAME: ${DB_NAME:-agrohub_production}
       DB_USER: ${DB_USER:-agrohub_user}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       DB_HOST: db
       DB_PORT: 5432
-
-      # Redis (uses container hostname)
       REDIS_HOST: redis
       REDIS_PORT: 6379
-
-      # Celery
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       USE_CELERY: "True"
-
-      # Email (optional)
       EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
       EMAIL_HOST: ${EMAIL_HOST:-}
       EMAIL_PORT: ${EMAIL_PORT:-587}
@@ -111,17 +96,11 @@ services:
       EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@agrohub.unirv.edu.br}
-
-      # Application settings
       SITE_URL: ${SITE_URL:-http://localhost}
       DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL:-INFO}
       DJANGO_LOG_TO_FILE: ${DJANGO_LOG_TO_FILE:-true}
       DJANGO_LOG_DIR: /app/logs
-
-      # Gunicorn settings
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-}
-
-      # Static files
       WHITENOISE_MAX_AGE: ${WHITENOISE_MAX_AGE:-31536000}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
@@ -136,11 +115,7 @@ services:
   # Celery Worker
   # ============================================
   celery-worker:
-    image: ${WEB_IMAGE:-agrohub-web:latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
+    image: agrohub-web:latest
     command:
       [
         "celery",
@@ -191,11 +166,7 @@ services:
   # Celery Beat (Periodic Task Scheduler)
   # ============================================
   celery-beat:
-    image: ${WEB_IMAGE:-agrohub-web:latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
+    image: agrohub-web:latest
     command:
       [
         "celery",
@@ -232,11 +203,7 @@ services:
   # Flower — Celery Monitoring Dashboard
   # ============================================
   flower:
-    image: ${WEB_IMAGE:-agrohub-web:latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
+    image: agrohub-web:latest
     command:
       [
         "celery",
@@ -270,7 +237,6 @@ services:
   # ============================================
   nginx:
     image: nginx:alpine
-    restart: unless-stopped
     depends_on:
       - web
     ports:
@@ -313,5 +279,6 @@ volumes:
 # ============================================
 networks:
   agrohub_network:
-    name: agrohub_network
+    name: agrohub_swarm_network
     driver: overlay
+    attachable: true
