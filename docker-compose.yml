@@ -314,4 +314,4 @@ volumes:
 networks:
   agrohub_network:
     name: agrohub_network
-    driver: bridge
+    driver: overlay
