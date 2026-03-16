@@ -69,7 +69,7 @@ services:
   # Django Application (Gunicorn)
   # ============================================
   web:
-    image: ${WEB_IMAGE:-agrohub_web:latest}
+    image: ${WEB_IMAGE:-agrohub-web:latest}
     build:
       context: .
       dockerfile: Dockerfile
@@ -136,7 +136,7 @@ services:
   # Celery Worker
   # ============================================
   celery-worker:
-    image: ${WEB_IMAGE:-agrohub_web:latest}
+    image: ${WEB_IMAGE:-agrohub-web:latest}
     build:
       context: .
       dockerfile: Dockerfile
@@ -191,7 +191,7 @@ services:
   # Celery Beat (Periodic Task Scheduler)
   # ============================================
   celery-beat:
-    image: ${WEB_IMAGE:-agrohub_web:latest}
+    image: ${WEB_IMAGE:-agrohub-web:latest}
     build:
       context: .
       dockerfile: Dockerfile
@@ -232,7 +232,7 @@ services:
   # Flower — Celery Monitoring Dashboard
   # ============================================
   flower:
-    image: ${WEB_IMAGE:-agrohub_web:latest}
+    image: ${WEB_IMAGE:-agrohub-web:latest}
     build:
       context: .
       dockerfile: Dockerfile
