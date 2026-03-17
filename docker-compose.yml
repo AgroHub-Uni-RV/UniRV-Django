@@ -399,5 +399,4 @@ configs:
 networks:
   agrohub_network:
     name: agrohub_swarm_network
-    driver: overlay
-    attachable: true
+    external: true
