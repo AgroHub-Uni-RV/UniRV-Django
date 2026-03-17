@@ -91,7 +91,7 @@ services:
   # Django Application (Gunicorn)
   # ============================================
   web:
-    image: ${WEB_IMAGE:?WEB_IMAGE is required (e.g. ghcr.io/<owner>/<repo>:<tag>)}
+    image: ${WEB_IMAGE:?WEB_IMAGE is required}
     depends_on:
       - db
       - redis
@@ -155,7 +155,7 @@ services:
   # Celery Worker
   # ============================================
   celery-worker:
-    image: ${WEB_IMAGE:?WEB_IMAGE is required (e.g. ghcr.io/<owner>/<repo>:<tag>)}
+    image: ${WEB_IMAGE:?WEB_IMAGE is required}
     entrypoint:
       [
         "celery",
@@ -222,7 +222,7 @@ services:
   # Celery Beat (Periodic Task Scheduler)
   # ============================================
   celery-beat:
-    image: ${WEB_IMAGE:?WEB_IMAGE is required (e.g. ghcr.io/<owner>/<repo>:<tag>)}
+    image: ${WEB_IMAGE:?WEB_IMAGE is required}
     entrypoint:
       [
         "celery",
@@ -277,7 +277,7 @@ services:
   # Flower — Celery Monitoring Dashboard
   # ============================================
   flower:
-    image: ${WEB_IMAGE:?WEB_IMAGE is required (e.g. ghcr.io/<owner>/<repo>:<tag>)}
+    image: ${WEB_IMAGE:?WEB_IMAGE is required}
     entrypoint:
       [
         "celery",
