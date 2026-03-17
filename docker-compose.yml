@@ -12,7 +12,10 @@ services:
     restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    configs:
+      - source: pg_hba_conf
+        target: /docker-entrypoint-initdb.d/pg_hba.conf
+        mode: 0444
     environment:
       POSTGRES_DB: ${DB_NAME:-agrohub_production}
       POSTGRES_USER: ${DB_USER:-agrohub_user}
@@ -141,9 +144,12 @@ services:
         max_attempts: 10
         window: 120s
       update_config:
-        order: start-first
+        order: stop-first
         parallelism: 1
         delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
 
   # ============================================
   # Celery Worker
@@ -160,7 +166,6 @@ services:
         "info",
         "--concurrency=2",
       ]
-    entrypoint: []
     depends_on:
       - db
       - redis
@@ -206,9 +211,12 @@ services:
         max_attempts: 10
         window: 120s
       update_config:
-        order: start-first
+        order: stop-first
         parallelism: 1
         delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
 
   # ============================================
   # Celery Beat (Periodic Task Scheduler)
@@ -226,7 +234,6 @@ services:
         "--scheduler",
         "django_celery_beat.schedulers:DatabaseScheduler",
       ]
-    entrypoint: []
     depends_on:
       - db
       - redis
@@ -259,9 +266,12 @@ services:
         max_attempts: 10
         window: 120s
       update_config:
-        order: start-first
+        order: stop-first
         parallelism: 1
         delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
 
   # ============================================
   # Flower — Celery Monitoring Dashboard
@@ -277,7 +287,6 @@ services:
         "--port=5555",
         "--url_prefix=flower",
       ]
-    entrypoint: []
     depends_on:
       - redis
     environment:
@@ -299,32 +308,6 @@ services:
       disable: true
     networks:
       - agrohub_network
-
-  # ============================================
-  # Nginx Reverse Proxy
-  # ============================================
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    depends_on:
-      - web
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
-      - static_data:/app/staticfiles:ro
-      - media_data:/app/media:ro
-      - nginx_logs:/var/log/nginx
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - agrohub_network
     deploy:
       mode: replicated
       replicas: 1
@@ -337,6 +320,9 @@ services:
         order: stop-first
         parallelism: 1
         delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
 
   # ============================================
   # Nginx Reverse Proxy (Static/Media + App)
@@ -347,12 +333,23 @@ services:
       - web
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - static_data:/app/staticfiles:ro
       - media_data:/app/media:ro
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/nginx.conf
+        mode: 0444
+      - source: nginx_default_conf
+        target: /etc/nginx/conf.d/default.conf
+        mode: 0444
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - agrohub_network
     deploy:
@@ -388,10 +385,19 @@ volumes:
   nginx_logs:
     name: agrohub_nginx_logs
 
+configs:
+  nginx_conf:
+    file: ./docker/nginx/nginx.conf
+  nginx_default_conf:
+    file: ./docker/nginx/conf.d/default.conf
+  pg_hba_conf:
+    file: ./docker/postgres/init/pg_hba.conf
+
 # ============================================
 # Network
 # ============================================
 networks:
   agrohub_network:
-    name: agrohub_network
-    driver: bridge
+    name: agrohub_swarm_network
+    driver: overlay
+    attachable: true
