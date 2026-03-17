@@ -1,5 +1,5 @@
 # ============================================
-# AgroHub - Docker Compose Configuration (Standalone)
+# AgroHub - Docker Compose (Swarm-ready) Stack
 # ============================================
 # Deployment local/VM com Docker Compose (não-Swarm)
 
@@ -29,6 +29,21 @@ services:
       start_period: 10s
     networks:
       - agrohub_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        order: stop-first
+        parallelism: 1
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
 
   # ============================================
   # Redis Cache
@@ -53,16 +68,27 @@ services:
       start_period: 5s
     networks:
       - agrohub_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      update_config:
+        order: stop-first
+        parallelism: 1
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
 
   # ============================================
   # Django Application (Gunicorn)
   # ============================================
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: agrohub-web:latest
-    restart: unless-stopped
+    image: ${WEB_IMAGE:?WEB_IMAGE is required (e.g. ghcr.io/<owner>/<repo>:<tag>)}
     depends_on:
       - db
       - redis
@@ -106,14 +132,25 @@ services:
       start_period: 30s
     networks:
       - agrohub_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+        window: 120s
+      update_config:
+        order: start-first
+        parallelism: 1
+        delay: 10s
 
   # ============================================
   # Celery Worker
   # ============================================
   celery-worker:
-    image: agrohub-web:latest
-    restart: unless-stopped
-    command:
+    image: ${WEB_IMAGE:?WEB_IMAGE is required (e.g. ghcr.io/<owner>/<repo>:<tag>)}
+    entrypoint:
       [
         "celery",
         "-A",
@@ -160,14 +197,25 @@ services:
       start_period: 30s
     networks:
       - agrohub_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+        window: 120s
+      update_config:
+        order: start-first
+        parallelism: 1
+        delay: 10s
 
   # ============================================
   # Celery Beat (Periodic Task Scheduler)
   # ============================================
   celery-beat:
-    image: agrohub-web:latest
-    restart: unless-stopped
-    command:
+    image: ${WEB_IMAGE:?WEB_IMAGE is required (e.g. ghcr.io/<owner>/<repo>:<tag>)}
+    entrypoint:
       [
         "celery",
         "-A",
@@ -202,14 +250,25 @@ services:
       disable: true
     networks:
       - agrohub_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+        window: 120s
+      update_config:
+        order: start-first
+        parallelism: 1
+        delay: 10s
 
   # ============================================
   # Flower — Celery Monitoring Dashboard
   # ============================================
   flower:
-    image: agrohub-web:latest
-    restart: unless-stopped
-    command:
+    image: ${WEB_IMAGE:?WEB_IMAGE is required (e.g. ghcr.io/<owner>/<repo>:<tag>)}
+    entrypoint:
       [
         "celery",
         "-A",
@@ -266,6 +325,51 @@ services:
       retries: 3
     networks:
       - agrohub_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+        window: 120s
+      update_config:
+        order: stop-first
+        parallelism: 1
+        delay: 10s
+
+  # ============================================
+  # Nginx Reverse Proxy (Static/Media + App)
+  # ============================================
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+    volumes:
+      - static_data:/app/staticfiles:ro
+      - media_data:/app/media:ro
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - agrohub_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+        window: 120s
+      update_config:
+        order: stop-first
+        parallelism: 1
+        delay: 10s
+      placement:
+        constraints:
+          - node.role == manager
 
 # ============================================
 # Named Volumes

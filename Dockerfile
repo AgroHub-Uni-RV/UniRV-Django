@@ -79,6 +79,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm AS runtime
 LABEL org.opencontainers.image.title="AgroHub - UniRV Django" \
     org.opencontainers.image.description="Django application for UniRV Innovation Hub" \
     org.opencontainers.image.source="https://github.com/UniRV/UniRV-Django" \
+    org.opencontainers.image.licenses="MIT" \
     org.opencontainers.image.vendor="UniRV"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
